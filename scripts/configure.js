@@ -309,19 +309,23 @@ if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
   delete config.models.bedrockDiscovery;
 }
 
-// Ollama (local, no API key needed)
+// Ollama (local, optional API key for authenticated deployments)
 const ollamaUrl = (process.env.OLLAMA_BASE_URL || "").replace(/\/+$/, "");
 if (ollamaUrl) {
   console.log("[configure] configuring Ollama provider");
   ensure(config, "models", "providers");
   const base = ollamaUrl.endsWith("/v1") ? ollamaUrl : `${ollamaUrl}/v1`;
-  config.models.providers.ollama = {
+  const ollamaConfig = {
     api: "openai-completions",
     baseUrl: base,
     models: [
       { id: "llama3.3", name: "Llama 3.3", contextWindow: 128000 },
     ],
   };
+  if (process.env.OLLAMA_API_KEY) {
+    ollamaConfig.apiKey = process.env.OLLAMA_API_KEY;
+  }
+  config.models.providers.ollama = ollamaConfig;
 } else {
   removeProvider("ollama", "Ollama", "OLLAMA_BASE_URL");
 }

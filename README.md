@@ -143,11 +143,12 @@ If a provider env var is removed, that provider section is cleaned from `opencla
 | `AWS_SESSION_TOKEN` | | Optional session token for temporary credentials. |
 | `BEDROCK_PROVIDER_FILTER` | `["anthropic"]` | Filter Bedrock model discovery by provider (JSON array or comma-separated string). |
 
-### Ollama (local models, no API key needed)
+### Ollama (local models)
 
 | Variable | Description |
 |---|---|
 | `OLLAMA_BASE_URL` | Ollama server URL (e.g. `http://host.docker.internal:11434`). Enables Ollama provider when set. |
+| `OLLAMA_API_KEY` | Optional API key for Ollama deployments that require authentication. |
 
 ### Model selection
 

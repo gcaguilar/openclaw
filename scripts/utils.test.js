@@ -345,6 +345,68 @@ eq(
   'partial match of unsafe key is allowed'
 );
 
+// ── Ollama provider with optional API key ───────────────────────────────────
+
+console.log('ollama optional API key');
+
+function simulateOllamaConfig() {
+  const config = {};
+  function ensure(obj, ...keys) {
+    let cur = obj;
+    for (const k of keys) {
+      cur[k] = cur[k] || {};
+      cur = cur[k];
+    }
+    return cur;
+  }
+  const ollamaUrl = (process.env.OLLAMA_BASE_URL || '').replace(/\/+$/, '');
+  if (ollamaUrl) {
+    ensure(config, 'models', 'providers');
+    const base = ollamaUrl.endsWith('/v1') ? ollamaUrl : `${ollamaUrl}/v1`;
+    const ollamaConfig = {
+      api: 'openai-completions',
+      baseUrl: base,
+      models: [{ id: 'llama3.3', name: 'Llama 3.3', contextWindow: 128000 }],
+    };
+    if (process.env.OLLAMA_API_KEY) {
+      ollamaConfig.apiKey = process.env.OLLAMA_API_KEY;
+    }
+    config.models.providers.ollama = ollamaConfig;
+  }
+  return config;
+}
+
+{
+  const saved = process.env.OLLAMA_BASE_URL;
+  process.env.OLLAMA_BASE_URL = 'http://localhost:11434';
+  delete process.env.OLLAMA_API_KEY;
+  const config = simulateOllamaConfig();
+  assert(!config.models.providers.ollama.apiKey, 'no apiKey when OLLAMA_API_KEY not set');
+  process.env.OLLAMA_BASE_URL = saved;
+}
+
+{
+  const saved = process.env.OLLAMA_BASE_URL;
+  process.env.OLLAMA_BASE_URL = 'http://localhost:11434';
+  process.env.OLLAMA_API_KEY = 'sk-ollama-secret';
+  const config = simulateOllamaConfig();
+  eq(config.models.providers.ollama.apiKey, 'sk-ollama-secret', 'apiKey set when OLLAMA_API_KEY is set');
+  eq(config.models.providers.ollama.api, 'openai-completions', 'api type unchanged with key');
+  eq(config.models.providers.ollama.baseUrl, 'http://localhost:11434/v1', 'baseUrl unchanged with key');
+  process.env.OLLAMA_BASE_URL = saved;
+  delete process.env.OLLAMA_API_KEY;
+}
+
+{
+  const saved = process.env.OLLAMA_BASE_URL;
+  process.env.OLLAMA_BASE_URL = 'http://localhost:11434';
+  process.env.OLLAMA_API_KEY = '';
+  const config = simulateOllamaConfig();
+  assert(!config.models.providers.ollama.apiKey, 'empty OLLAMA_API_KEY does not set key');
+  process.env.OLLAMA_BASE_URL = saved;
+  delete process.env.OLLAMA_API_KEY;
+}
+
 // ── Results ─────────────────────────────────────────────────────────────────
 
 console.log(`\n${passed} passed, ${failed} failed`);
